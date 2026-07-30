@@ -1,0 +1,72 @@
+Frost —— KDE Plasma 6 桌面主题
+Copyright (c) 2026 xhhcn
+
+本主题分两类内容，各自适用不同许可。两份全文都在 LICENSES/ 目录下。
+（早先这里写「三类 / 三份」—— 那是 frost_minimize 还声明 MIT 时的数字。
+  它已改回 GPL，全树再无 MIT 子包，包里也只有两份全文。）
+（这份索引是必要的：每个子包的 metadata.json 里各写着自己的 License
+  字段，但 Plasma 不会因此把许可全文装进去 —— 声明了许可却不附全文，
+  对 GPL 来说是不合规的，对拿到这个包的人来说也无从查证条款。）
+
+────────────────────────────────────────────────────────────────
+GPL-2.0-or-later —— 与 Plasma 自身一致的部分
+────────────────────────────────────────────────────────────────
+  desktoptheme/Frost/                     Plasma 样式（KSvg 素材 + 元数据）
+  look-and-feel/com.xhhcn.frost/            全局主题（含 splash 的 QML）
+  layout-templates/com.xhhcn.frost.topbarDock/   面板布局模板
+
+  选 GPL 的理由：这三者要么直接包含 QML/JS（与 KDE 的 GPL 代码在同一
+  进程里运行、调用其私有接口），要么是 Plasma 的布局脚本。跟随上游许可
+  最省事，也避免「主题是 MIT 但它 import 的 org.kde.* 是 GPL」这类
+  说不清的组合。
+
+  完整条款：LICENSES/GPL-2.0-or-later.txt
+
+  kwin-effects/frost_minimize/            最小化动画
+
+  ★ 这一项曾被错误地声明为 MIT，已更正 ★
+  frost_minimize 是 KWin 自带 squash 特效的**衍生作品** —— 它逐行照抄
+  /usr/share/kwin-wayland/effects/squash/contents/code/main.js，
+  实质修改只有一处：加入 elevate() 与五处调用（让离场动画画在最上层）；
+  另外去掉了上游在 animate() 前重复的第二次 setData(WindowForceBlurRole,true)
+  （槽首已写过同值，纯冗余）。其余差异只是重命名与排版。
+  squash 的头部是：
+      SPDX-FileCopyrightText: 2018 Vlad Zahorodnii <vlad.zahorodnii@kde.org>
+      SPDX-License-Identifier: GPL-2.0-or-later
+  早先这里写「只用 KWin 公开的 API，不链接也不衍生自任何 GPL 代码」，
+  并把许可声明成 MIT、删掉了原作者署名 —— **那是明确的错误陈述**。
+  逐行照抄 GPL 代码后改声明 MIT 并去署名，对 GPL 是硬性不合规。
+  现已改回 GPL-2.0-or-later 并在文件头恢复原作者的 SPDX 署名。
+
+────────────────────────────────────────────────────────────────
+CC0-1.0 —— 美术素材
+────────────────────────────────────────────────────────────────
+  wallpapers/FrostScene-{dawn,day,dusk,night}/   四时段壁纸
+  login-wallpaper/FrostLogin/                    登录界面壁纸（中性暮色）
+
+  选 CC0 的理由：这些是纯 SVG 绘制的山谷场景，是作品而不是代码。
+  CC0 等于放弃权利 —— 想拿去改、拿去商用、拿去当别的主题的底图都行，
+  不必署名。素材上的限制只会阻碍它被用起来。
+
+  完整条款：LICENSES/CC0-1.0.txt
+
+────────────────────────────────────────────────────────────────
+关于「自制」
+────────────────────────────────────────────────────────────────
+素材、配色、壁纸、图标字形均为自行编写/绘制，由 build-theme.py 从代码
+生成 —— 仓库里没有任何来自其他主题的二进制或 SVG 素材。研究过
+Breeze / Fluent / Lightly 的实现方式（并在源码注释里注明了从它们身上
+学到的具体事实）。
+
+★ 两个明确的例外，必须说清楚 ★
+
+一、**kwin-effects/frost_minimize 是复制来的代码**，不是自制。
+    它逐行照抄 KWin 自带的 squash（GPL-2.0-or-later，
+    作者 Vlad Zahorodnii），只加了 elevate() 与五处调用，
+    并去掉了上游一处重复的 setData（同值，纯冗余）。
+    此前这一段写「均为自行编写」并把它算作自制，是不准确的 ——
+    「动画曲线自行编写」尤其错：缓动、时长、三条通道全部来自 squash。
+
+二、两份许可全文取自系统上的权威副本
+    （/usr/share/licenses/spdx/ 的 GPL-2.0-or-later 与 CC0-1.0），
+    不是凭记忆重写 —— 一份有错字的许可比没有许可更糟。
