@@ -1,0 +1,45 @@
+# ── 必须排除：别人的代码 ──
+# ref-arch/ 是 https://github.com/ddh4r4m/Arch.git 的完整克隆
+# （12181 个文件 / 85MB / GPL-2.0 / 自带 .git）。
+# 它只是研究参照，一行都没被复制进 Frost。
+# 提交它会直接违背 licenses/LICENSE 里那句
+# 「仓库里没有任何来自其他主题的二进制或 SVG 素材」。
+ref-arch/
+ref-lightly6/
+
+# ── 必须排除：作者的个人配置 ──
+# _BACKUP_* 里是安装 Frost 之前的真实 KDE 配置（51 个文件：
+# kdeglobals / kwinrc / plasmashellrc / appletsrc / kdedefaults 等）。
+# 没有口令类内容，但那是私人桌面配置，不该公开。
+# RESTORE.sh 会在本地按 _BACKUP_* 模式自动找到它们，不需要提交。
+_BACKUP_*/
+_panel_before_frost.tar.gz
+
+# ── 必须排除：与主题无关的个人机器脚本 ──
+# 都是这台 ThinkPad X1 Carbon Gen 9 的系统调优，不是主题的一部分。
+x1c9-tune.sh
+battery-full-once.sh
+cleanup-vinyl.sh
+
+# ── 开发日志：本地保留，不发布 ──
+# frost/README.md 是一份 2635 行 / 189KB 的工程日志：设计决策、每个数字背后的
+# 测量、以及 30 多条踩过的坑和当时定案的证据。它对开发有用，但不适合当公开
+# 文档 —— 里面有大量已被后续迭代更正的中间结论（更正也记在里面），
+# 拿它当当前事实引用会出错。公开文档是仓库根目录那份 README.md。
+frost/README.md
+
+# ── 生成物：由 build-theme.py 重建，不入库 ──
+frost/out/
+frost/__pycache__/
+__pycache__/
+*.pyc
+frost/log.txt
+
+# ── 发布包：走 GitHub Releases，不提交二进制 ──
+# 需要的话：gh release create v1.0 frost/frost-1.0.tar.gz
+frost/*.tar.gz
+
+# ── 编辑器 / 系统零碎 ──
+.DS_Store
+*.swp
+*~
