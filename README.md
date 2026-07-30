@@ -1,5 +1,12 @@
 # Frost
 
+[![Release](https://img.shields.io/github/v/release/xhhcn/frost?style=flat-square&color=98ade6)](https://github.com/xhhcn/frost/releases)
+[![Licence](https://img.shields.io/badge/licence-GPL--2.0--or--later%20%2F%20CC0--1.0-98ade6?style=flat-square)](frost/licenses/LICENSE)
+[![Plasma](https://img.shields.io/badge/Plasma-6.7-1d99f3?style=flat-square&logo=kde&logoColor=white)](https://kde.org/plasma-desktop/)
+[![Wayland](https://img.shields.io/badge/Wayland-supported-f5b942?style=flat-square)](https://wayland.freedesktop.org/)
+[![Arch](https://img.shields.io/badge/Arch%20Linux-tested-1793d1?style=flat-square&logo=archlinux&logoColor=white)](https://archlinux.org/)
+[![No dependencies](https://img.shields.io/badge/runtime-pure%20data%2C%20no%20daemon-ffb37a?style=flat-square)](#how-its-built)
+
 A hand-written frosted-glass theme for KDE Plasma 6. Every asset is generated from code — no SVG, colour or icon was downloaded from anywhere.
 
 Built for Arch Linux + Plasma 6.7 + Wayland.
