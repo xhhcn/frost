@@ -43,7 +43,14 @@ rm -rf "$DEST/plasma/desktoptheme/Frost" \
        "$DEST/plasma/layout-templates/com.xhhcn.frost.topbarDock" \
        "$DEST/icons/Frost" \
        "$DEST/icons/Frost-cursors" \
-       "$DEST/kwin/effects/frost_minimize"
+       "$DEST/kwin/effects/frost_minimize" \
+       "$DEST/frost"
+# ★ $DEST/frost 必须删，即使本脚本自己不创建它 ★
+# 它是**发布包**的 install.sh 建的（BIN="$DEST/frost"，里面是 daylight.py /
+# tweak.py / __pycache__，约 110KB）。装发布包、之后又克隆仓库跑本脚本的用户，
+# 会留下这一坨 —— 上面那几行刚把 systemd 单元删了，所以它们是彻底的死文件，
+# 而脚本照样打印「已删除」。包内 uninstall.sh 一直删它，这里是补齐对称。
+# rm -rf 对不存在的路径无害，从仓库安装的用户不受影响。
 
 # ★ 删掉特效目录还不够 ★
 # KWin 已经把它加载进内存了；不显式卸载的话，最小化动画会继续跑到

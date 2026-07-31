@@ -16,9 +16,13 @@ from rendered pixels; nothing is asserted from the SVG source.
      because Breeze draws a solid disc. Different shape, not a different rule.
   4. At 24px, over four backgrounds, some pixel of every cursor clears 3:1.
      This is the gate that catches limbs too thin to keep their fill.
-  5. Animated cursors carry the declared frame count and delay.
+  5. Animated cursors carry the declared frame count and delay, and every frame
+     at a given size differs from the others. A spinner whose frames are all
+     identical still reports the right count and delay — it just silently does
+     not spin, and nothing else here would notice.
 """
 
+import hashlib
 import os
 import struct
 import sys
@@ -116,6 +120,15 @@ def verify(theme_dir, quiet=False):
             fails.append(f"[frames] {n}: {nframes} frames, expected {want}")
         if n in ANIMATED and frames[0][4] != FRAME_MS:
             fails.append(f"[delay] {n}: {frames[0][4]}ms, expected {FRAME_MS}ms")
+
+        if n in ANIMATED:
+            for size in sizes:
+                digests = [hashlib.md5(f[5]).hexdigest()
+                           for f in frames if f[0] == size]
+                if len(set(digests)) != len(digests):
+                    dup = len(digests) - len(set(digests))
+                    fails.append(f"[frames] {n}@{size}: {dup} duplicate frame(s) — "
+                                 f"the animation does not advance")
 
         for w, h, xh, yh, _d, px in frames:
             if n not in HOTSPOT_EXEMPT:

@@ -3350,7 +3350,7 @@ def build_cursors_if_possible():
                for f in os.listdir(os.path.join(out, "cursors"))
                if not os.path.islink(os.path.join(out, "cursors", f)))
     print(f"  光标门禁：全部通过（尺寸阶梯 + 断链 + 热点落在不透明像素 + "
-          f"24px 实测对比度 ≥3:1 + 帧数延迟）")
+          f"24px 实测对比度 ≥3:1 + 帧数延迟 + 动画逐帧唯一）")
     print(f"  光标：{n} 个 + {links} 个符号链接，{size/1024/1024:.1f} MB")
 
 
