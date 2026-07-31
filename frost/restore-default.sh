@@ -16,7 +16,14 @@ echo "==> 1/3  用 Plasma 官方工具切回 Breeze Dark 全局主题"
 plasma-apply-lookandfeel -a org.kde.breezedark.desktop 2>/dev/null && echo "    ok" || echo "    (跳过)"
 plasma-apply-desktoptheme default            2>/dev/null && echo "    Plasma 样式 -> default" || true
 plasma-apply-colorscheme  BreezeDark         2>/dev/null && echo "    配色 -> BreezeDark"    || true
-plasma-apply-cursortheme  breeze_cursors     2>/dev/null && echo "    光标 -> breeze_cursors" || true
+# 光标：这一条同时负责三件事，别删。
+#   1. 写 kcminputrc [Mouse] cursorTheme
+#   2. 触发 kde-gtk-config 的 kded 模块，把 gtk-3.0/gtk-4.0/.gtkrc-2.0 里的
+#      gtk-cursor-theme-name 一并同步回 breeze_cursors —— 实测验证过：
+#      往 settings.ini 写一个哨兵值再切换光标主题，哨兵会被覆盖。
+#      所以本脚本**不需要**自己动 GTK 文件。
+#   3. 通知运行中的会话立即换回
+plasma-apply-cursortheme  breeze_cursors     2>/dev/null && echo "    光标 -> breeze_cursors（GTK 由 kde-gtk-config 跟随）" || true
 
 echo "==> 2/3  还原窗口装饰 / 图标 / 控件风格"
 kwriteconfig6 --file kwinrc    --group org.kde.kdecoration2 --key library org.kde.breeze

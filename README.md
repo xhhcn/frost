@@ -23,6 +23,7 @@ Built for Arch Linux + Plasma 6.7 + Wayland.
 | **Colour schemes** | Five — a base plus one per time of day |
 | **Wallpapers** | Four hand-drawn valley scenes, pixel-aligned so they cross-fade cleanly |
 | **Icons** | Hand-drawn folders that follow the accent; everything else inherited |
+| **Cursors** | 19 shapes drawn from path data, covering all 115 names Breeze ships |
 | **Splash** | Bridges the login screen into the desktop |
 | **KWin effect** | Minimise animation drawn above other windows |
 | **Konsole** | Colour scheme and profile, applied automatically |
@@ -45,7 +46,7 @@ Wallpaper, colour scheme, splash and lock screen all move together. A systemd **
 
 Three constraints shaped most of the decisions:
 
-- **Colour carries exactly two meanings.** Accent means *time*; selection, hover and focus mean *state*. Everything else is monochrome. This is why the terminal is the one surface that does *not* take the accent — ANSI is already a colour language there, and a third one would compete with it.
+- **Colour carries exactly two meanings.** Accent means *time*; selection, hover and focus mean *state*. Everything else is monochrome. This is why the terminal is the one surface that does *not* take the accent — ANSI is already a colour language there, and a third one would compete with it. The cursors are the other exception, for the opposite reason: they are built once at install and cannot know the time, so an accent there would freeze at whatever hour you installed and then state the wrong one all day. They use the two colours in the palette that never move — `ForegroundNormal` and the view background.
 - **Every number is measured, not chosen.** Opacities, contrast ratios and animation timings were derived from rendered pixels. Text is held to 4.5:1, non-text UI components to 3:1.
 - **Glass is for chrome, not content.** Panels and popups are translucent; a terminal body is not.
 
@@ -87,17 +88,21 @@ The theme installs and works without these; it degrades in the listed ways, and 
 
 | Component | Where | Without it |
 |---|---|---|
+| `librsvg` + `xorg-xcursorgen` | extra | Cursors aren't built. The theme declares `breeze_cursors` instead, so nothing points at a missing theme. Everything else is unaffected |
 | `fluent-icon-theme` | AUR | Icons fall back to Breeze; two menu-category icons don't exist there and render blank |
 | `papirus-icon-theme` | extra | Loses one inheritance fallback |
 | Darkly | build `Bali10050/Lightly` into `~/.local` | Widget style and window decorations fall back to Breeze — no rounded corners, shadows or translucent menus. Panel glass, colours and time-of-day switching are unaffected |
 
 ## How it's built
 
-`build-theme.py` is the single source of truth. Change a design variable at the top, re-run it, and the whole tree — SVGs, colour schemes, layout script, metadata — is regenerated. Four gates run on every build:
+`build-theme.py` is the single source of truth. Change a design variable at the top, re-run it, and the whole tree — SVGs, colour schemes, layout script, metadata — is regenerated. `build-cursors.py` does the same for the cursor set: 19 shapes as path data, rendered to Xcursor at six sizes. No binary asset is stored in this repository; everything under `frost/out/` is built, not committed.
+
+Five gates run on every build:
 
 - **Source self-check** (AST): duplicate dict keys, dead constants, module visibility, cross-file constants
 - **Output structure**: JS comment boundaries and cross-references, SVG XML and id references, QML balance and imports, JSON validity
 - **Contrast**: 5 colour schemes × every colour group × 8 foreground keys × 2 backgrounds, plus 30 Konsole sections
+- **Cursors**: the compiled Xcursor files are read back and measured — full size ladder, no dangling alias, hotspot on an opaque pixel, and every shape clearing 3:1 at 24px over four backgrounds
 - **Manifest**: the package must contain every required path before it is written
 
 ## Licence
