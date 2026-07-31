@@ -33,10 +33,16 @@ echo "==> 2/2  删除 Frost 文件"
 # 五套配色（不是一套）、图标主题、五个壁纸包，早先都漏了 ——
 # 漏掉的后果不只是占空间：kdeglobals 里若还留着 Theme=Frost / ColorScheme=Frost-day，
 # 卸载后这些名字指向不存在的资源，界面会回落到一半 Breeze 一半空白。
+# ★ icons/Frost 和 icons/Frost-cursors 是**两个不同的主题**，都要删 ★
+# 前者是图标主题（文件夹 + Arch 徽标），后者是光标主题。分开是因为一个
+# index.theme 的 Inherits= 没法同时服务图标继承链和光标继承链。
+# 光标主题是可选组件，构建时缺 rsvg-convert/xcursorgen 就没有它 ——
+# rm -rf 对不存在的路径是无害的，不用加判断。
 rm -rf "$DEST/plasma/desktoptheme/Frost" \
        "$DEST/plasma/look-and-feel/com.xhhcn.frost" \
        "$DEST/plasma/layout-templates/com.xhhcn.frost.topbarDock" \
        "$DEST/icons/Frost" \
+       "$DEST/icons/Frost-cursors" \
        "$DEST/kwin/effects/frost_minimize"
 
 # ★ 删掉特效目录还不够 ★

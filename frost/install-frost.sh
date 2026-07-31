@@ -176,6 +176,26 @@ mkdir -p "$DEST/wallpapers"
 rm -rf "$DEST/wallpapers/FrostScene-"*
 cp -r "$OUT/wallpapers/FrostScene-"* "$DEST/wallpapers/"
 
+# ---- 光标主题（可选组件）----
+# ★ 目标名是 Frost-cursors，不是 Frost ★
+# $DEST/icons/Frost 是**图标**主题（文件夹 + Arch 徽标），它的 index.theme
+# 里 Inherits=Fluent-dark,... 是给图标继承链用的；光标继承要的是
+# Inherits=breeze_cursors。一个 index.theme 没法同时充当两者，合进去会打架。
+# 光标包自己的 index.theme 写 Name=Frost，所以系统设置里仍然显示「Frost」，
+# 而 kcminputrc 存的是目录名 Frost-cursors。
+#
+# out/cursors 不存在 = 构建时缺 rsvg-convert / xcursorgen，build-theme.py
+# 已经警告过并跳过。这里静默跳过即可，光标继续用 breeze_cursors。
+if [ -d "$OUT/cursors/Frost-cursors" ]; then
+    echo "==> 安装光标主题"
+    mkdir -p "$DEST/icons"
+    rm -rf "$DEST/icons/Frost-cursors"
+    cp -r "$OUT/cursors/Frost-cursors" "$DEST/icons/"
+    echo "    $(ls "$DEST/icons/Frost-cursors/cursors" | wc -l) 个光标名（应用见 apply-frost.sh）"
+else
+    echo "==> 光标主题：跳过（构建时未生成，缺 rsvg-convert / xcursorgen）"
+fi
+
 echo "==> 刷新缓存"
 # ★ 必须清 plasma_theme_<Id>.kcache ★
 # Plasma 把渲染好的 SVG 缓存在这里，不清的话改了 SVG 也看不到效果 ——

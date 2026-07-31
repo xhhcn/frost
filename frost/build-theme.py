@@ -18,7 +18,7 @@ NAME   = "Frost"
 AUTHOR = "xhhcn"
 # 版本号只在这里定义。package-frost.sh 的 VER 是从 look-and-feel 的
 # metadata.json 里读回来的（不是自己写一份），所以改这一处就够。
-VERSION = "1.0"
+VERSION = "1.1"
 
 # ── 各时段的强调色 ──
 # 规则：**强调色 = 该场景光源的颜色**（太阳 / 月亮）。
@@ -639,8 +639,28 @@ def color_scheme(accent=None):
 # ─────────────────── 全局主题包 (look-and-feel) ───────────────────
 LNF_ID = "com.xhhcn.frost"
 
+
+def cursors_available():
+    """
+    光标是可选组件：缺 rsvg-convert / xcursorgen 就不生成。
+
+    defaults 里的 cursorTheme 必须跟着这个判断走 —— 指向一个没装出来的光标
+    主题，Xcursor 找不到目录，XWayland 应用会掉到 X11 内置的那个丑陋十字/
+    箭头，比老老实实用 breeze_cursors 糟得多。
+    """
+    import importlib.util
+    src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "build-cursors.py")
+    if not os.path.isfile(src):
+        return False
+    spec = importlib.util.spec_from_file_location("frost_cursors_probe", src)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return not m.missing_tools()
+
+
 def lnf_defaults():
     """主题总开关。contrast=0 是让 Breeze 菜单/弹窗变毛玻璃的关键。"""
+    cursor_theme = "Frost-cursors" if cursors_available() else "breeze_cursors"
     return textwrap.dedent(f"""\
         [kdeglobals][General]
         ColorScheme={NAME}
@@ -660,8 +680,16 @@ def lnf_defaults():
         library=org.kde.darkly
         theme=Darkly
 
+        # ★ 这一行是**活的**，不是死配置（和下面 [kwinrc][Plugins] 那段相反）★
+        # 实测 /usr/lib/libklookandfeel.so 的字符串表里 cursorTheme / kcminputrc /
+        # Mouse 三个 UTF-16 串全部命中，所以 plasma-apply-lookandfeel 和
+        # 「系统设置 → 全局主题 → 应用」都会真的写这个键。
+        # 也正因为它是活的：值必须跟着光标有没有构建出来走（见 cursors_available()），
+        # 否则从系统设置应用主题会把光标指向一个不存在的目录。
+        # 目标名是 Frost-cursors 不是 Frost —— icons/Frost 是**图标**主题，
+        # 它的 Inherits= 服务于图标继承链，没法同时充当光标继承。
         [kcminputrc][Mouse]
-        cursorTheme=breeze_cursors
+        cursorTheme={cursor_theme}
 
         [ksplashrc][KSplash]
         Theme=com.xhhcn.frost
@@ -3268,6 +3296,62 @@ def main():
             print(f"   {f}", file=sys.stderr)
         raise SystemExit(1)
     print("  对比度门禁：全部通过（5 套配色 × 各色组 × 8 前景键 × 2 背景 + Konsole 30 段）")
+
+    build_cursors_if_possible()
+
+
+def build_cursors_if_possible():
+    """
+    生成光标主题（可选组件）。
+
+    光标是唯一需要外部工具的资产：rsvg-convert 栅格化 SVG，xcursorgen 把 PNG
+    打包成 Xcursor。rsvg-convert 本来就是 splash 图的可选栅格化器之一，所以
+    真正新增的依赖只有 xcursorgen 一个。
+
+    缺工具时**警告并跳过**，不中止构建 —— 与 README「可选组件」表里其它几项
+    同一种降级方式：主题其余部分完全不受影响，只是光标继续用 breeze_cursors。
+
+    产物落在 out/cursors/Frost-cursors，由 install-frost.sh 拷到
+    $DEST/icons/Frost-cursors。注意目标名不是 Frost：icons/Frost 是**图标**主题，
+    它的 Inherits= 是给图标继承链用的，没法同时充当光标继承。
+    """
+    import importlib.util
+    here = os.path.dirname(os.path.abspath(__file__))   # 本文件只定义了 OUT，没有 HERE
+    src = os.path.join(here, "build-cursors.py")
+    if not os.path.isfile(src):
+        return
+    spec = importlib.util.spec_from_file_location("frost_cursors", src)
+    bc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bc)
+
+    gone = bc.missing_tools()
+    if gone:
+        print(f"  光标：跳过（缺 {', '.join(gone)}；"
+              f"Arch: pacman -S librsvg xorg-xcursorgen）")
+        print("        主题其余部分不受影响，光标会继续用 breeze_cursors。")
+        return
+
+    out = os.path.join(OUT, "cursors", bc.THEME_DIR)
+    shutil.rmtree(out, ignore_errors=True)
+    n, links = bc.build(out)
+
+    # 光标有自己的门禁：它检查的是**编译回读**的像素（热点是否落在不透明像素、
+    # 24px 实测对比度、尺寸阶梯、断链），这些 verify_output() 看不见。
+    vsrc = os.path.join(here, "verify-cursors.py")
+    if os.path.isfile(vsrc):
+        vspec = importlib.util.spec_from_file_location("frost_cursors_verify", vsrc)
+        vc = importlib.util.module_from_spec(vspec)
+        vspec.loader.exec_module(vc)
+        if vc.verify(out, quiet=True) != 0:
+            print()
+            print("!! 光标门禁未通过，构建中止：", file=sys.stderr)
+            raise SystemExit(1)
+    size = sum(os.path.getsize(os.path.join(out, "cursors", f))
+               for f in os.listdir(os.path.join(out, "cursors"))
+               if not os.path.islink(os.path.join(out, "cursors", f)))
+    print(f"  光标门禁：全部通过（尺寸阶梯 + 断链 + 热点落在不透明像素 + "
+          f"24px 实测对比度 ≥3:1 + 帧数延迟）")
+    print(f"  光标：{n} 个 + {links} 个符号链接，{size/1024/1024:.1f} MB")
 
 
 if __name__ == "__main__":

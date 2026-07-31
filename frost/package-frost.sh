@@ -92,6 +92,17 @@ cp -r "$SRC/plasma/desktoptheme/Frost"              "$R/share/plasma/desktopthem
 cp -r "$SRC/plasma/look-and-feel/com.xhhcn.frost"     "$R/share/plasma/look-and-feel/"
 cp -r "$SRC/plasma/layout-templates/com.xhhcn.frost."* "$R/share/plasma/layout-templates/"
 cp -r "$SRC/icons/Frost"                            "$R/share/icons/"
+# ★ 光标是**另一个** icons/ 下的主题，不是 icons/Frost 的一部分 ★
+# 一个 index.theme 的 Inherits= 没法同时服务图标继承链和光标继承链，所以
+# 分成 icons/Frost（图标）和 icons/Frost-cursors（光标）两个目录。
+# 可选组件：构建时缺 rsvg-convert / xcursorgen 就没有它，这里静默跳过。
+# ★ 不能用 cp -rL / cp -rp 之外的解引用形式 ★ 包里有 72 个符号链接
+# （别名，例如 grabbing -> closedhand -> dnd-move）。GNU cp -r 默认**不**解引用，
+# 所以链接原样进包；一旦被解引用，体积从 4.5MB 涨到 12MB 且别名结构丢失。
+# 清单校验段会分别比对 -type f 和 -type l 的数量，正是为了抓这个。
+if [ -d "$SRC/icons/Frost-cursors" ]; then
+    cp -r "$SRC/icons/Frost-cursors"                "$R/share/icons/"
+fi
 cp    "$SRC/color-schemes/Frost"*.colors            "$R/share/color-schemes/"
 cp -r "$SRC/wallpapers/FrostScene-"*                "$R/share/wallpapers/"
 mkdir -p "$R/share/konsole"
@@ -361,6 +372,11 @@ plasma-apply-lookandfeel -a org.kde.breezedark.desktop 2>/dev/null \
   || plasma-apply-lookandfeel -a org.kde.breeze.desktop 2>/dev/null || true
 plasma-apply-desktoptheme default    2>/dev/null || true
 plasma-apply-colorscheme  BreezeDark 2>/dev/null || true
+# 光标：上面那条 lookandfeel 本身就带 [kcminputrc][Mouse] cursorTheme=breeze_cursors
+# （实测 org.kde.breezedark.desktop 的 defaults 里有），所以正常路径下已经还原。
+# 这条是保险：lookandfeel 应用失败时，cursorTheme 会继续指向下面马上要被删掉的
+# Frost-cursors 目录。顺带触发 kde-gtk-config 把 GTK 那三个文件同步回去。
+plasma-apply-cursortheme  breeze_cursors 2>/dev/null || true
 
 echo "==> 2/5  停用按时段切换"
 # 不停掉的话：定时器每 20 分钟把 Frost 的配色和壁纸重新写回来，
@@ -445,6 +461,7 @@ rm -rf "$DEST/plasma/desktoptheme/Frost" \
        "$DEST/plasma/look-and-feel/com.xhhcn.frost" \
        "$DEST/plasma/layout-templates/com.xhhcn.frost."* \
        "$DEST/icons/Frost" \
+       "$DEST/icons/Frost-cursors" \
        "$DEST/kwin/effects/frost_minimize" \
        "$DEST/frost"
 rm -f  "$DEST"/color-schemes/Frost*.colors \
@@ -532,6 +549,28 @@ for d in plasma/desktoptheme/Frost \
   [ "$a" = "0" ]   && { echo "  !! $d 在已安装侧是空的 —— 比对没有意义" >&2; miss=1; }
 done
 
+# ★ 光标单独比对，不能并进上面那个循环 ★ 两个原因：
+#   1. 它是**可选组件**。已安装侧没有 = 构建时缺 rsvg-convert/xcursorgen，
+#      是正常状态；并进去会撞上 `[ "$a" = "0" ] && miss=1` 那条硬失败。
+#   2. 它有 72 个符号链接，而 find -type f **不数符号链接**。只比 -type f
+#      的话，「cp 把链接解引用成了 72 个实体文件」和「链接原样进包」两种情况
+#      的 f 数都对不上（前者 45 vs 117），但「链接全丢了」会 f 数相同而 l 数为 0
+#      —— 那正是最危险、最静默的失败模式（别名全部失效，grabbing/move 等
+#      光标直接不存在）。所以两类都要比。
+if [ -d "$SRC/icons/Frost-cursors" ]; then
+  for t in f l; do
+    a=$(find "$SRC/icons/Frost-cursors" -type $t 2>/dev/null | wc -l)
+    b=$(find "$R/share/icons/Frost-cursors" -type $t 2>/dev/null | wc -l)
+    [ "$a" = "$b" ] || { echo "  !! icons/Frost-cursors 的 -type $t 数不符：已安装 $a / 包内 $b" >&2; miss=1; }
+    [ "$a" = "0" ]  && { echo "  !! icons/Frost-cursors 已安装侧 -type $t 为 0 —— 装坏了" >&2; miss=1; }
+  done
+  # 别名不能断链：包内的符号链接必须都能在包内解开（而不是解到系统里去）
+  broken=$(find "$R/share/icons/Frost-cursors" -xtype l 2>/dev/null | wc -l)
+  [ "$broken" = "0" ] || { echo "  !! 包内光标有 $broken 个断链" >&2; miss=1; }
+else
+  echo "  (光标未安装，跳过其清单校验 —— 可选组件)"
+fi
+
 # 许可：每一种被声明的许可，包里都必须有对应的全文；反过来也不该多带。
 # 同样从声明反查，不写死列表（理由见上面收集阶段那段注释）。
 [ -s "$R/LICENSE" ] || { echo "  !! 包内缺顶层 LICENSE 索引" >&2; miss=1; }
@@ -559,7 +598,7 @@ for f in "$R/LICENSES"/*.txt; do
     echo "  !! 包里带了 LICENSES/$n.txt 但没有任何子包声明它" >&2; miss=1; }
 done
 [ "$miss" = 0 ] || { echo "!! 清单校验未通过，不打包" >&2; exit 1; }
-echo "  清单校验通过（${#need[@]} 个必需项 + 四时段资产 + 五类文件数比对 + 许可全文覆盖声明）"
+echo "  清单校验通过（${#need[@]} 个必需项 + 四时段资产 + 五类文件数比对 + 光标实体/链接/断链 + 许可全文覆盖声明）"
 
 echo "==> 打包"
 tar czf "$PKG" -C "$STAGE" "frost-$VER"
